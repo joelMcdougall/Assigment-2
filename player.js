@@ -1,4 +1,4 @@
-// The player 
+// The player's own file
 var Player = function() {
 	this.image = document.createElement("img");
 	this.x = canvas.width/2;
