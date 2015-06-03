@@ -40,8 +40,14 @@ var fps = 0;
 var fpsCount = 0;
 var fpsTime = 0;
 
+var score = 0;
+var lives = 3;
+
+var heartImage = document.createElement("img");
+heartImage.src = "heart.png";
+
 // the variables for the tile set are declared here
-var LAYER_COUNT = 3;
+var LAYER_COUNT = 4;
 var MAP = {tw: 80, th: 15};
 var TILE = 35;
 var TILESET_TILE = TILE * 2
@@ -76,6 +82,8 @@ var keyboard = new Keyboard();
 var tileset = document.createElement("img");
 tileset.src = "tileset.png";
 
+var musicBackground;
+var sfxFire;
 
 function cellAtPixelCoord(layer, x, y)
 {
@@ -116,11 +124,19 @@ function bound(value, min, max)
 	return value;
 }
 
+var ENEMY_MAXDX = METER * 5;
+var ENEMY_ACCEL = ENEMY_MAXDX * 2;
+
+var enemies = {};
+
 // variables for layers
 var LAYER_COUNT = 3;
 var LAYER_BACKGROUND = 0;
 var LAYER_PLATFORMS = 1;
 var LAYER_LADDERS = 2;
+
+var LAYER_OBJECT_ENEMIES = 3;
+var LAYER_OBJECT_TRIGGERS = 4;
 
 var worldOffsetX =0;
 function drawMap()
@@ -203,6 +219,39 @@ function initialize()
 			}
 		}
 	}
+	
+	// add enemies
+	idx = 0;
+	for(var y = 0; y < level1.layers[LAYER_OBJECT_ENEMIES].height; y++) {
+		for(var x = 0; x < level1.layers[LAYER_OBJECT_ENEMIES].width; x++) {
+			if(level1.layers[LAYER_OBJECT_ENEMIES].data[idx] != 0) {
+			var px = tileToPixel(x);
+			var py = tileToPixel(y);
+			var e = new enemy(px, py);
+			enemies.push(e);
+		}
+		idx++;
+	}
+}
+	
+	musicBackground = new Howl(
+{
+	urls: ["background.ogg"],
+	loop: true,
+	buffer: true,
+volume: 0.5
+	} );
+	musicBackground.play();
+	
+	sfxFire = new Howl(
+		{
+			urls: ["fireEffect.ogg"],
+			buffer: true,
+			volume: 1,
+			onend: function() {
+			isSfxPlaying = false;
+			}
+		} );
 }
 
 function run()
@@ -212,7 +261,24 @@ function run()
 	context.fillRect(0, 0, canvas.width, canvas.height);
 	drawMap();
 	
+	// score
+	context.fillStyle = "black";
+	context.font="24px Arial";
+	var scoreText = "score =  " + score;
+	context.fillText(scoreText, SCREEN_WIDTH - 370, 50);
+	
+	// life counter
+	for(var i=0; i<lives; i++)
+	{
+	 context.drawImage(heartImage, 290 + ((heartImage.width+2)*i), 5);
+	}
+	
 	var deltaTime = getDeltaTime();
+	
+	for(var i=0; i<enemies.length; i++)
+	{
+		enemies[i].update(deltaTime);
+	}
 	
 	player.update(deltaTime);
 	player.draw();
